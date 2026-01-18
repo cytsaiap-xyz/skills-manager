@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Skill Manager</title>
+  <meta name="description" content="Centralized skill management and distribution system">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="index.css">
+</head>
+
+<body>
+  <div class="app">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-content">
+        <div class="logo">
+          <span class="logo-icon">⚡</span>
+          <h1>Skill Manager</h1>
+        </div>
+        <p class="subtitle">Discover and download skills for your projects</p>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+      <!-- Destination Selector -->
+      <section class="destination-section">
+        <div class="destination-card">
+          <h3>📍 Download Destination</h3>
+          <div class="destination-options">
+            <label class="destination-option">
+              <input type="radio" name="destination" value="global" checked>
+              <span class="option-content">
+                <span class="option-icon">🌍</span>
+                <span class="option-details">
+                  <span class="option-title">Global (OpenCode)</span>
+                  <span class="option-path" id="globalPath">~/.config/opencode/skill/</span>
+                </span>
+              </span>
+            </label>
+            <label class="destination-option">
+              <input type="radio" name="destination" value="project">
+              <span class="option-content">
+                <span class="option-icon">📁</span>
+                <span class="option-details">
+                  <span class="option-title">Project</span>
+                  <span class="option-path">.opencode/skill/</span>
+                </span>
+              </span>
+            </label>
+          </div>
+          <div class="project-path-input" id="projectPathSection" style="display: none;">
+            <label for="projectPath">Project Path:</label>
+            <input type="text" id="projectPath" placeholder="/path/to/your/project" />
+          </div>
+        </div>
+      </section>
+
+      <!-- Skills Grid -->
+      <section class="skills-section">
+        <div class="section-header">
+          <h2>🛠️ Available Skills</h2>
+          <button class="refresh-btn" onclick="loadSkills()">
+            <span class="refresh-icon">↻</span> Refresh
+          </button>
+        </div>
+
+        <!-- Search and Filter -->
+        <div class="search-filter-section">
+          <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="searchInput" placeholder="Search skills by name, description, or tags..."
+              oninput="filterSkills()">
+            <button class="clear-search-btn" id="clearSearchBtn" onclick="clearSearch()"
+              style="display: none;">×</button>
+          </div>
+          <div class="category-filters" id="categoryFilters">
+            <button class="category-btn active" data-category="all" onclick="setCategory('all')">
+              All
+              <span class="category-count" id="countAll">0</span>
+            </button>
+            <!-- Categories will be dynamically added here -->
+          </div>
+        </div>
+
+        <div class="filter-status" id="filterStatus" style="display: none;">
+          <span id="filterStatusText"></span>
+          <button class="clear-filters-btn" onclick="clearAllFilters()">Clear filters</button>
+        </div>
+
+        <div class="skills-grid" id="skillsGrid">
+          <div class="loading">
+            <div class="spinner"></div>
+            <p>Loading skills...</p>
+          </div>
+        </div>
+
+        <div class="empty-state" id="emptyState" style="display: none;">
+          <span class="empty-icon">📭</span>
+          <h3>No Skills Found</h3>
+          <p>Add skills to the repository to get started.</p>
+        </div>
+
+        <div class="empty-state" id="noResultsState" style="display: none;">
+          <span class="empty-icon">🔍</span>
+          <h3>No Matching Skills</h3>
+          <p>Try adjusting your search or filter criteria.</p>
+        </div>
+      </section>
+
+      <!-- Installed Skills Section -->
+      <section class="skills-section installed-section">
+        <div class="section-header">
+          <h2>📦 Installed Skills</h2>
+          <button class="refresh-btn" onclick="loadInstalledSkills()">
+            <span class="refresh-icon">↻</span> Refresh
+          </button>
+        </div>
+
+        <div class="installed-tabs">
+          <button class="tab-btn active" data-tab="global" onclick="switchInstalledTab('global')">
+            🌍 Global
+            <span class="badge" id="globalBadge">0</span>
+          </button>
+          <button class="tab-btn" data-tab="project" onclick="switchInstalledTab('project')">
+            📁 Project
+            <span class="badge" id="projectBadge">0</span>
+          </button>
+        </div>
+
+        <div class="skills-grid installed-grid" id="installedGlobalGrid">
+          <div class="empty-state-small">
+            <span>No global skills installed</span>
+          </div>
+        </div>
+
+        <div class="skills-grid installed-grid" id="installedProjectGrid" style="display: none;">
+          <div class="empty-state-small">
+            <span>No project skills installed (enter project path above)</span>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Skill Detail Modal -->
+    <div class="modal" id="skillModal">
+      <div class="modal-overlay" onclick="closeModal()"></div>
+      <div class="modal-content">
+        <button class="modal-close" onclick="closeModal()">×</button>
+        <div class="modal-header">
+          <h2 id="modalTitle">Skill Name</h2>
+          <p id="modalDescription">Description</p>
+        </div>
+        <div class="modal-body">
+          <h4>📄 Files</h4>
+          <ul class="file-list" id="modalFiles"></ul>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeModal()">Close</button>
+          <button class="btn btn-primary" id="modalDownloadBtn">
+            <span>⬇️</span> Download
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="index.js"></script>
+</body>
+
+</html>
